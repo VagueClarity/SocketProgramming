@@ -26,33 +26,48 @@ while True:
     try:
         clientsocket, address = server.accept()
         
+        
+        ########## First Connection ############################
         client_id = address[1]
         clients.append(client_id)
         
+        
+        ###############################  Recieving Data   ############################ 
+        request_from_client = clientsocket.recv(1024)
+        data = pickle.loads(request_from_client)
+        client_name = data['client_name']
+        date = data['sent_on']
+        print(f"Client {client_name} with clientid: {client_id} has connected to this server")
+        
         while True:
-            request_from_client = clientsocket.recv(1024)
+           
+            ##############################  Sending Data   ############################
+            server_msg = "Hello from server"    
+            server_response = {"client_id": client_id, "msg_from_server": server_msg}
+            serialized_data = pickle.dumps(server_response)
+            #serialized_data = bytes(f'{len(serialized_data):< {HEADERSIZE}}', "utf-8") + serialized_data
             
-            if(request_from_client):
-                data = pickle.loads(request_from_client)
-              
+            clientsocket.send(serialized_data)  
+            
+            
+            ###############################  Recieving Data   ############################   
+            option = clientsocket.recv(1024)
+            pickledOption = pickle.loads(option)
+            print("recieved")
+            # if pickledOption["Option"] == 1:
                 
-                client_name = data['client_name']
-                date = data['sent_on']
-                print(f"Client {client_name} with clientid: {client_id} has connected to this server")
-            
-                server_msg = "Hello from server"    
-                server_response = {"client_id": client_id, "msg_from_server": server_msg}
-                serialized_data = pickle.dumps(server_response)
-                #serialized_data = bytes(f'{len(serialized_data):< {HEADERSIZE}}', "utf-8") + serialized_data
-                clientsocket.send(serialized_data)  
+            #     s_clients = pickle.dumps(clients)
+            #     clientsocket.send(s_clients)
+            #     pass
             
         print("Closing clientSocket")
         clientsocket.close()
        
     # client Id assigned by server to client
-    except socket.error as socket_error:
-        print(socket_error)
+    except (socket.error, EOFError):
+        #print("An exception as occured")
         pass
+    
     print("closing server")
     server.close()
   
