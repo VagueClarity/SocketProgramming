@@ -7,28 +7,48 @@ import random
 
 class TCPClientHandler:
     
+ 
+    
     def __init__(self, socket):
         self.clientS = socket
        
         
     def getUser(self):
-        data = {"Option": 1}
+        data = {"client_name": ID, "sent_on": datetime.datetime.now(), "Option": 1}
         s_data = pickle.dumps(data)
         self.clientS.send(s_data)
         print("Client has sent the data")
         
 
     def sendMessage(self):
-        print("this is inside sendMessage")
+        
+        data = {"client_name": ID, "sent_on": datetime.datetime.now(), "Option": 2}
+        s_data = pickle.dumps(data)
+        self.clientS.send(s_data)
+        
         
 
     def getMessages(self):
-        print("this is inside getMessages")
+        data = {"client_name": ID, "sent_on": datetime.datetime.now(), "Option": 3}
+        s_data = pickle.dumps(data)
+        self.clientS.send(s_data)
         
     
     def createChannel(self):
-        print("this is inside createCHannel")
+        data = {"client_name": ID, "sent_on": datetime.datetime.now(), "Option": 4}
+        s_data = pickle.dumps(data)
+        self.clientS.send(s_data)
         
+        
+    def chatting(self):
+        data = {"client_name": ID, "sent_on": datetime.datetime.now(), "Option": 5}
+        s_data = pickle.dumps(data)
+        self.clientS.send(s_data)
+    
+    def disconnect(self):
+        data = {"client_name": ID, "sent_on": datetime.datetime.now(), "Option": 6}
+        s_data = pickle.dumps(data)
+        self.clientS.send(s_data)
     
     
     def getChoice(self):
@@ -47,9 +67,12 @@ class TCPClientHandler:
             1: self.getUser,
             2: self.sendMessage,
             3: self.getMessages,
-            4: self.createChannel
+            4: self.createChannel,
+            5: self.chatting,
+            6: self.disconnect
+            
         }
-        func = switcher.get(choice, lambda: print("Choice must be from 1-4"))
+        func = switcher.get(choice, lambda: print("Choice must be from 1-6"))
         func()
         #return func()
         
@@ -62,66 +85,95 @@ def init_prompt():
     return [HOST, PORT, ID]
 
 
-def menuChoice(choice):
-    pass
 
-
+class Client:
+    
+    client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    connected = False
+    
+    def __init__(self, host = socket.gethostbyname(socket.gethostname()) , port = 6969, ID = 'Aang'):
+        self.host = host
+        self.port = port
+        self.ID = ID
+        
+        
+    def run(self):
+        self.client.connect((self.host, self.port))
+        self.connected = True
+        
+        
+    def sendData(self, data): 
+        #data = {"client_name": ID, "sent_on": datetime.datetime.now(), "Option": 2}
+        data_serialized = pickle.dumps(data)
+        self.client.send(data_serialized)
+        print("Client has sent the Data")
+    
+    def recieveData(self):
+        server_response = self.client.recv(1024)
+        if len(server_response) > 0:
+            server_data = pickle.loads(server_response)
+            return server_data
+        else:   
+            return None
+    
+    def getClientSocket(self):
+        return self.client
+    
+    def stop(self):
+        self.connected = False
+        self.client.close()
+        
+    def isConnected(self):
+        return self.connected
+    
+    def setConnected(self, flag = True):
+        self.connected = flag
+        
+        
+    
+    
 def connect(HOST, PORT, ID):
     try:
-        client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        client.connect((HOST, PORT))
-        
        
-        ################################   SENDING DATA   ###########################
+        
+        c = Client(HOST, PORT)
+        c.run()
+        client = c.getClientSocket()
+        
         data = {"client_name": ID, "sent_on": datetime.datetime.now(), "Option": 2}
-        data_serialized = pickle.dumps(data)
-        client.send(data_serialized)
-        print("Client has sent the Data")
-        
-        
-        
+        ############################## Sending Dat ################################
+        c.sendData(data)
+    
+  
         ###############################  Recieving Data   ############################
-        server_response = client.recv(1024)
-        server_data = pickle.loads(server_response)
+
+        server_data = c.recieveData()
         
         client_id = server_data['client_id']
         server_msg = server_data['msg_from_server']
-
-        #print data and close client
-
         print("Client " + str(client_id) + " successfully connected to server")
         print("Server says: " + server_msg)
         TCHP = TCPClientHandler(client)
         
-        
-        
         while True:
             
-            
-            #TCHP.getChoice()
+            ############################## Sending Data #############################
+            TCHP.getChoice()
             
             ########################### Recieving data #####################
-            # server_response = client.recv(1024)
-            # data = pickle.loads(server_response)
-            # print("recieved")
-            # print(f"Recieved data is: {data}")
-            
-            
-            ###############################  Sending Data   ############################ 
-            TCHP.getChoice()
-            time.sleep(3)
-            # time.sleep(3)
-            # data = {"client_name": random.randint(1,10), "sent_on": datetime.datetime.now(), "Option": 2}
-            # data_serialized = pickle.dumps(data)
-            # client.send(data_serialized)
-            # print("Sending Data")
-            
+            clients = c.recieveData()
+            print("recieved")
+            print(f"Recieved data is: {clients}")
+            # if !clients["flag"]:
+            #     c.setConnected()
+            time.sleep(2)
+           
         
        
     except socket.error as socket_exception:
         print(socket_exception)  
     print("Closing client")
-    client.close()
+    c.stop()
   
 
 
@@ -138,10 +190,10 @@ PORT = 6969
 print("Host is: " + HOST)
 print("Port is: " + str(PORT))
 
-#connect(HOST, PORT, ID)
+connect(HOST, PORT, ID)
 
-test = TCPClientHandler(None)
-func = test.getChoice()
+#test = TCPClientHandler(None)
+#test.getChoice()
 ##################################################################################
 # client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 # client.connect((HOST, PORT))

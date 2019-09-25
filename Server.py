@@ -53,12 +53,20 @@ while True:
             ###############################  Recieving Data   ############################   
             option = clientsocket.recv(1024)
             pickledOption = pickle.loads(option)
-            print("recieved")
-            # if pickledOption["Option"] == 1:
+            print(f"recieved choice: {pickledOption['Option']}" )
+            if pickledOption["Option"] == 1:
                 
-            #     s_clients = pickle.dumps(clients)
-            #     clientsocket.send(s_clients)
-            #     pass
+                ########################### Send Data #####################################
+                s_clients = pickle.dumps(clients)
+                clientsocket.send(s_clients)
+                print(f'sending data back: {clients[0]}')
+            
+            if pickledOption["Option"] == 6:
+                data = {"flag": False, "msg": "You have been disconnected from server."}
+                s_clients = pickle.dumps(data)
+                clientsocket.send(s_clients)
+                clientsocket.close()
+                
             
         print("Closing clientSocket")
         clientsocket.close()
@@ -68,8 +76,9 @@ while True:
         #print("An exception as occured")
         pass
     
-    print("closing server")
+    
     server.close()
+    print("closing server")
   
 
 
